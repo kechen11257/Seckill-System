@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+
+<generatorConfiguration>
+    <context id="testTables" targetRuntime="MyBatis3">
+        <commentGenerator>
+            <!-- Whether to remove automatically generated comments(是否去除自动生成的注释) true：是 yes ： false:否 no -->
+            <property name="suppressAllComments" value="true"/>
+        </commentGenerator>
+        <!--Database connection information: driver class, connection address, user name, password(数据库连接的信息：驱动类、连接地址、用户名、密码) -->
+        <!--        <jdbcConnection driverClass="com.mysql.jdbc.Driver"-->
+        <!--                        connectionURL="jdbc:mysql://139.196.48.177:3306/couponPO" userId="root"-->
+        <!--                        password="XiaJie123??">-->
+        <jdbcConnection driverClass="com.mysql.jdbc.Driver"
+                        connectionURL="jdbc:mysql://localhost:3306/seckill_kechen?serverTimezone=GMT"
+                        userId="root"
+                        password="secure1234">
+        </jdbcConnection>
+        <!-- <jdbcConnection driverClass="oracle.jdbc.OracleDriver"
+            connectionURL="jdbc:oracle:thin:@127.0.0.1:1521:yycg"
+            userId="yycg"
+            password="yycg">
+        </jdbcConnection> -->
+
+        <!-- default:false，parse JDBC DECIMAL and NUMERIC types into Integer，parse JDBC DECIMAL and
+            NUMERIC types into java.math.BigDecimal when true-->
+        <javaTypeResolver>
+            <property name="forceBigDecimals" value="false"/>
+        </javaTypeResolver>
+
+        <!-- targetProject:Where the PO class is generated(生成PO类的位置) -->
+        <javaModelGenerator targetPackage="com.kechen.seckill.db.po"
+                            targetProject="./src/main/java">
+            <!-- enableSubPackages:Whether to use schema as the suffix of the package(是否让schema作为包的后缀) -->
+            <property name="enableSubPackages" value="true"/>
+            <!-- Values returned from the database are sanitized for leading and trailing spaces(从数据库返回的值被清理前后的空格) -->
+            <property name="trimStrings" value="true"/>
+        </javaModelGenerator>
+
+
+        <!-- targetProject:The location where the mapper mapping file is generated(mapper映射文件生成的位置) -->
+        <sqlMapGenerator targetPackage="mappers"
+                         targetProject="./src/main/resources">
+            <!-- enableSubPackages:是否让schema作为包的后缀 -->
+            <property name="enableSubPackages" value="true"/>
+        </sqlMapGenerator>
+
+        <!-- targetPackage：mapper接口生成的位置 -->
+        <javaClientGenerator type="XMLMAPPER"
+                             targetPackage="com.kechen.seckill.db.mappers"
+                             targetProject="./src/main/java">
+            <!-- enableSubPackages:Whether to use schema as the suffix of the package(是否让schema作为包的后缀) -->
+            <property name="enableSubPackages" value="true"/>
+        </javaClientGenerator>
+        <table schema="" tableName="seckill_activity" domainObjectName="SeckillActivity"  enableCountByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" enableUpdateByExample="false" selectByExampleQueryId="false">
+        </table>
+        <table schema="" tableName="seckill_commodity" domainObjectName="SeckillCommodity"  enableCountByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" enableUpdateByExample="false" selectByExampleQueryId="false">
+        </table>
+
+
+        <!-- The fields of some tables need to specify the java type(有些表的字段需要指定java类型)
+         <table schema="" tableName="">
+            <columnOverride column="" javaType="" />
+        </table> -->
+    </context>
+</generatorConfiguration>
