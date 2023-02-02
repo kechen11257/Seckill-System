@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+
 @Slf4j
 @Service
 public class SeckillActivityService {
@@ -72,6 +74,22 @@ public class SeckillActivityService {
         return order;
     }
 
+    /**
+     * 订单支付完成处理
+     * @param orderNo
+     */
+    public void payOrderProcess(String orderNo) {
+        log.info("完成支付订单 订单号：" + orderNo);
+        Order order = orderDao.queryOrder(orderNo);
+        boolean deductStockResult = seckillActivityDao.deductStock(order.getSeckillActivityId());
+        if (deductStockResult) {
+            order.setPayTime(new Date());
+            // Order Status 0. No stock available, invalid order 1. Created and awaiting payment 2. Payment completed
+            // 订单状态 0、没有可用库存，无效订单  1、已创建等待支付  2、完成支付
+            order.setOrderStatus(2);
+            orderDao.updateOrder(order);
+        }
+    }
 }
 
 
