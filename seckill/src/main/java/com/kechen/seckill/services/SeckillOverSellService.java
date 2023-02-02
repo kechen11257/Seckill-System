@@ -12,7 +12,7 @@ public class SeckillOverSellService {
     private SeckillActivityDao seckillActivityDao;
 
     public String  processSeckill(long activityId) {
-        // get current seckill item
+        // get current seckill activity
         SeckillActivity seckillActivity = seckillActivityDao.querySeckillActivityById(activityId);
         // get available stock of current seckill
         long availableStock = seckillActivity.getAvailableStock();
