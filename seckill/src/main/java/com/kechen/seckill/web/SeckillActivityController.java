@@ -9,7 +9,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -19,18 +18,47 @@ import java.util.Map;
 
 @Controller
 public class SeckillActivityController {
-    @RequestMapping("/addSeckillActivity")
-    public String addSeckillActivity() {
-        return "add_activity";
-    }
-
     @Autowired
     private SeckillActivityDao seckillActivityDao;
 
     @Autowired
     private SeckillCommodityDao seckillCommodityDao;
 
-    @ResponseBody
+    /**
+     * 查询秒杀活动的列表
+     *
+     * @param resultMap
+     * @return
+     */
+    @RequestMapping("/seckills")
+    public String sucessTest(Map<String,Object> resultMap){
+        List<SeckillActivity> seckillActivities = seckillActivityDao.querySeckillActivitysByStatus(1);
+        resultMap.put("seckillActivities",seckillActivities);
+        return "seckill_activity";
+    }
+
+    /**
+     * 秒杀商品详情
+     * @param resultMap
+     * @param seckillActivityId
+     * @return
+     */
+    @RequestMapping("/item/{seckillActivityId}")
+    public String itemPage(Map<String,Object> resultMap,@PathVariable long seckillActivityId){
+        SeckillActivity seckillActivity = seckillActivityDao.querySeckillActivityById(seckillActivityId);
+        SeckillCommodity seckillCommodity = seckillCommodityDao.querySeckillCommodityById(seckillActivity.getCommodityId());
+
+        resultMap.put("seckillActivity",seckillActivity);
+        resultMap.put("seckillCommodity",seckillCommodity);
+        resultMap.put("seckillPrice",seckillActivity.getSeckillPrice());
+        resultMap.put("oldPrice",seckillActivity.getOldPrice());
+        resultMap.put("commodityId",seckillActivity.getCommodityId());
+        resultMap.put("commodityName",seckillCommodity.getCommodityName());
+        resultMap.put("commodityDesc",seckillCommodity.getCommodityDesc());
+        return "seckill_item";
+    }
+
+    //    @ResponseBody
     @RequestMapping("/addSeckillActivityAction")
     public String addSeckillActivityAction(
             @RequestParam("name") String name,
@@ -42,8 +70,8 @@ public class SeckillActivityController {
             @RequestParam("endTime") String endTime,
             Map<String, Object> resultMap
     ) throws ParseException {
-        startTime = startTime.substring(0, 10) + startTime.substring(11);
-        endTime = endTime.substring(0, 10) + endTime.substring(11);
+        startTime = startTime.substring(0, 10) +  startTime.substring(11);
+        endTime = endTime.substring(0, 10) +  endTime.substring(11);
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-ddhh:mm");
         SeckillActivity seckillActivity = new SeckillActivity();
         seckillActivity.setName(name);
@@ -51,42 +79,22 @@ public class SeckillActivityController {
         seckillActivity.setSeckillPrice(seckillPrice);
         seckillActivity.setOldPrice(oldPrice);
         seckillActivity.setTotalStock(seckillNumber);
-        // seckillActivity.setAvailableStock(new Integer("" + seckillNumber));
-        seckillActivity.setAvailableStock(Integer.valueOf("" + seckillNumber));
+        seckillActivity.setAvailableStock(new Integer("" + seckillNumber));
         seckillActivity.setLockStock(0L);
         seckillActivity.setActivityStatus(1);
         seckillActivity.setStartTime(format.parse(startTime));
         seckillActivity.setEndTime(format.parse(endTime));
         seckillActivityDao.inertSeckillActivity(seckillActivity);
-        // return seckillActivity.toString();
         resultMap.put("seckillActivity", seckillActivity);
         return "add_success";
     }
 
-    @RequestMapping("/seckills")
-    public String activityList(Map<String, Object> resultMap) {
-        List<SeckillActivity> seckillActivities =
-                seckillActivityDao.querySeckillActivitysByStatus(1);
-        resultMap.put("seckillActivities", seckillActivities);
-        return "seckill_activity";
+    /**
+     * 跳转发布页
+     * @return
+     */
+    @RequestMapping("/addSeckillActivity")
+    public String addSeckillActivity(){
+        return "add_activity";
     }
-
-    @RequestMapping("/item/{seckillActivityId}")
-    public String itemPage(Map<String, Object> resultMap, @PathVariable long
-            seckillActivityId) {
-        SeckillActivity seckillActivity =
-                seckillActivityDao.querySeckillActivityById(seckillActivityId);
-        SeckillCommodity seckillCommodity =
-                seckillCommodityDao.querySeckillCommodityById(seckillActivity.getCommodityId());
-        resultMap.put("seckillActivity", seckillActivity);
-        resultMap.put("seckillCommodity", seckillCommodity);
-        resultMap.put("seckillPrice", seckillActivity.getSeckillPrice());
-        resultMap.put("oldPrice", seckillActivity.getOldPrice());
-        resultMap.put("commodityId", seckillActivity.getCommodityId());
-        resultMap.put("commodityName", seckillCommodity.getCommodityName());
-        resultMap.put("commodityDesc", seckillCommodity.getCommodityDesc());
-        return "seckill_item";
-    }
-
-
 }
