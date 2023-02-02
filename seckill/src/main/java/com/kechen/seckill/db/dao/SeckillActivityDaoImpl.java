@@ -2,7 +2,6 @@ package com.kechen.seckill.db.dao;
 
 import com.kechen.seckill.db.mappers.SeckillActivityMapper;
 import com.kechen.seckill.db.po.SeckillActivity;
-import com.kechen.seckill.db.dao.SeckillActivityDao;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
