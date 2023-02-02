@@ -1,5 +1,6 @@
 package com.kechen.seckill.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -7,6 +8,7 @@ import redis.clients.jedis.JedisPool;
 import javax.annotation.Resource;
 import java.util.Collections;
 
+@Slf4j
 @Service
 public class RedisService {
     @Resource
@@ -81,4 +83,45 @@ public class RedisService {
         jedisClient.incr(key);
         jedisClient.close();
     }
-}
+
+    public boolean isInLimitMember(long seckillActivityId, long userId) {
+        /**
+         * Determine whether it is in the purchase restriction list 判断是否在限购名单中
+         *
+         * @param activityId
+         * @param userId
+         * @return
+         */
+        Jedis jedisClient = jedisPool.getResource();
+        boolean sismember = jedisClient.sismember("seckillActivity_users:" + seckillActivityId, String.valueOf(userId));
+        jedisClient.close();
+        log.info("userId:{} activityId:{} in the purchased list:{}", userId, seckillActivityId, sismember);
+            return sismember;
+        }
+
+    /**
+     * 添加限购名单
+     *
+     * @param activityId
+     * @param userId
+     */
+    public void addLimitMember(long activityId, long userId) {
+        Jedis jedisClient = jedisPool.getResource();
+        jedisClient.sadd("seckillActivity_users:" + activityId,
+                String.valueOf(userId));
+        jedisClient.close();
+    }
+
+    public void removeLimitMember(Long seckillActivityId, Long userId) {
+        /**
+         * Remove Restricted List 移除限购名单
+         *
+         * @param activityId
+         * @param userId
+         */
+            Jedis jedisClient = jedisPool.getResource();
+            jedisClient.srem("seckillActivity_users:" + seckillActivityId,
+                    String.valueOf(userId));
+            jedisClient.close();
+        }
+    }

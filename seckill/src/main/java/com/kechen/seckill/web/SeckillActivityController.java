@@ -6,6 +6,7 @@ import com.kechen.seckill.db.dao.SeckillCommodityDao;
 import com.kechen.seckill.db.po.Order;
 import com.kechen.seckill.db.po.SeckillActivity;
 import com.kechen.seckill.db.po.SeckillCommodity;
+import com.kechen.seckill.services.RedisService;
 import com.kechen.seckill.services.SeckillActivityService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -36,6 +37,9 @@ public class SeckillActivityController {
 
     @Resource
     private OrderDao orderDao;
+
+    @Resource
+    RedisService redisService;
 
     /**
      * 查询秒杀活动的列表
@@ -126,6 +130,18 @@ public class SeckillActivityController {
         ModelAndView modelAndView = new ModelAndView();
         try {
             /*
+             * Determine whether the user is in the purchased list 判断用户是否在已购名单中
+             */
+            if (redisService.isInLimitMember(seckillActivityId, userId)) {
+                // Prompt that the user is already in the purchase restriction list, and return the result
+                // 提示用户已经在限购名单中，返回结果
+                modelAndView.addObject("resultInfo", "Sorry, you are already on the purchase restriction list");
+                modelAndView.setViewName("seckill_result");
+                //Add user to purchased list 添加用户到已购名单中
+                return modelAndView;
+            }
+
+            /*
              * Confirm whether it can be spiked 确认是否能够进行秒杀
              */
             stockValidateResult = seckillActivityService.seckillStockValidator(seckillActivityId);
@@ -133,6 +149,7 @@ public class SeckillActivityController {
                 Order order = seckillActivityService.createOrder(seckillActivityId, userId);
                 modelAndView.addObject("resultInfo","The seckill is successful, the order is being created, the order ID：" + order.getOrderNo());
                 modelAndView.addObject("orderNo",order.getOrderNo());
+                redisService.addLimitMember(seckillActivityId, userId);
             } else {
                 modelAndView.addObject("resultInfo","Sorry, the item is out of stock");
             }
