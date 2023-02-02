@@ -2,13 +2,18 @@ package com.kechen.seckill.web;
 
 import com.kechen.seckill.db.dao.SeckillActivityDao;
 import com.kechen.seckill.db.dao.SeckillCommodityDao;
+import com.kechen.seckill.db.po.Order;
 import com.kechen.seckill.db.po.SeckillActivity;
 import com.kechen.seckill.db.po.SeckillCommodity;
+import com.kechen.seckill.services.SeckillActivityService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -16,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Controller
 public class SeckillActivityController {
     @Autowired
@@ -23,6 +29,9 @@ public class SeckillActivityController {
 
     @Autowired
     private SeckillCommodityDao seckillCommodityDao;
+
+    @Autowired
+    private SeckillActivityService seckillActivityService;
 
     /**
      * 查询秒杀活动的列表
@@ -79,7 +88,7 @@ public class SeckillActivityController {
         seckillActivity.setSeckillPrice(seckillPrice);
         seckillActivity.setOldPrice(oldPrice);
         seckillActivity.setTotalStock(seckillNumber);
-        seckillActivity.setAvailableStock(new Integer("" + seckillNumber));
+        seckillActivity.setAvailableStock(Integer.valueOf("" + seckillNumber));
         seckillActivity.setLockStock(0L);
         seckillActivity.setActivityStatus(1);
         seckillActivity.setStartTime(format.parse(startTime));
@@ -96,5 +105,38 @@ public class SeckillActivityController {
     @RequestMapping("/addSeckillActivity")
     public String addSeckillActivity(){
         return "add_activity";
+    }
+
+
+    /**
+     * 处理抢购请求
+     * @param userId
+     * @param seckillActivityId
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping("/seckill/buy/{userId}/{seckillActivityId}")
+    public ModelAndView seckillCommodity(@PathVariable long userId, @PathVariable long seckillActivityId) {
+        boolean stockValidateResult = false;
+
+        ModelAndView modelAndView = new ModelAndView();
+        try {
+            /*
+             * Confirm whether it can be spiked 确认是否能够进行秒杀
+             */
+            stockValidateResult = seckillActivityService.seckillStockValidator(seckillActivityId);
+            if (stockValidateResult) {
+                Order order = seckillActivityService.createOrder(seckillActivityId, userId);
+                modelAndView.addObject("resultInfo","The seckill is successful, the order is being created, the order ID：" + order.getOrderNo());
+                modelAndView.addObject("orderNo",order.getOrderNo());
+            } else {
+                modelAndView.addObject("resultInfo","Sorry, the item is out of stock");
+            }
+        } catch (Exception e) {
+            log.error("The seckill system is abnormal" + e.toString());
+            modelAndView.addObject("resultInfo","Spike failed");
+        }
+        modelAndView.setViewName("seckill_result");
+        return modelAndView;
     }
 }

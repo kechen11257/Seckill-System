@@ -2,11 +2,13 @@ package com.kechen.seckill.db.dao;
 
 import com.kechen.seckill.db.mappers.SeckillActivityMapper;
 import com.kechen.seckill.db.po.SeckillActivity;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
 import java.util.List;
 
+@Slf4j
 @Repository
 public class SeckillActivityDaoImpl implements SeckillActivityDao {
 
@@ -32,4 +34,15 @@ public class SeckillActivityDaoImpl implements SeckillActivityDao {
     public void updateSeckillActivity(SeckillActivity seckillActivity) {
         seckillActivityMapper.updateByPrimaryKey(seckillActivity);
     }
+
+    @Override
+    public boolean lockStock(Long seckillActivityId) {
+        int result = seckillActivityMapper.lockStock(seckillActivityId);
+        if (result < 1) {
+            log.error("Failed to lock inventory");
+            return false;
+        }
+        return true;
+    }
+
 }

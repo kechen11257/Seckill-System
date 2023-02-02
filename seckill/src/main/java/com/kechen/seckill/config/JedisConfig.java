@@ -1,5 +1,6 @@
 package com.kechen.seckill.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.mybatis.logging.Logger;
 import org.mybatis.logging.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
