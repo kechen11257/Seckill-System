@@ -3,30 +3,35 @@ package com.kechen.seckill.services;
 import com.alibaba.fastjson.JSON;
 import com.kechen.seckill.db.dao.OrderDao;
 import com.kechen.seckill.db.dao.SeckillActivityDao;
+import com.kechen.seckill.db.dao.SeckillCommodityDao;
 import com.kechen.seckill.db.po.Order;
 import com.kechen.seckill.db.po.SeckillActivity;
+import com.kechen.seckill.db.po.SeckillCommodity;
 import com.kechen.seckill.mq.RocketMQService;
 import com.kechen.seckill.util.SnowFlake;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.Date;
 
 @Slf4j
 @Service
 public class SeckillActivityService {
 
-    @Autowired
+    @Resource
     private RedisService redisService;
 
-    @Autowired
+    @Resource
     private SeckillActivityDao seckillActivityDao;
 
-    @Autowired
+    @Resource
     private RocketMQService rocketMQService;
-    @Autowired
+    @Resource
     private OrderDao orderDao;
+
+    @Resource
+    SeckillCommodityDao seckillCommodityDao;
 
     /**
      * datacenterId;  数据中心
@@ -57,7 +62,7 @@ public class SeckillActivityService {
      */
     public Order createOrder(long seckillActivityId, long userId) throws Exception {
         /*
-         * 1.创建订单
+         * 1.Create Order 创建订单
          */
         SeckillActivity seckillActivity = seckillActivityDao.querySeckillActivityById(seckillActivityId);
         Order order = new Order();
@@ -67,7 +72,7 @@ public class SeckillActivityService {
         order.setUserId(userId);
         order.setOrderAmount(seckillActivity.getSeckillPrice().longValue());
         /*
-         *2.发送创建订单消息
+         *2.Send create order message 发送创建订单消息
          */
         rocketMQService.sendMessage("seckill_order", JSON.toJSONString(order));
 
@@ -131,6 +136,19 @@ public class SeckillActivityService {
          *3.Send order payment success message 发送订单付款成功消息
          */
         rocketMQService.sendMessage("pay_done", JSON.toJSONString(order));
+    }
+
+    /**
+     * 将秒杀详情相关信息倒入redis
+     *
+     * @param seckillActivityId
+     */
+    public void pushSeckillInfoToRedis(long seckillActivityId) {
+        SeckillActivity seckillActivity = seckillActivityDao.querySeckillActivityById(seckillActivityId);
+        redisService.setValue("seckillActivity:" + seckillActivityId, Long.valueOf(JSON.toJSONString(seckillActivity)));
+
+        SeckillCommodity seckillCommodity = seckillCommodityDao.querySeckillCommodityById(seckillActivity.getCommodityId());
+        redisService.setValue("seckillCommodity:" + seckillActivity.getCommodityId(), Long.valueOf(JSON.toJSONString(seckillCommodity)));
     }
 }
 

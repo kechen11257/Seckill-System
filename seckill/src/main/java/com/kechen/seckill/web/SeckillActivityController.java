@@ -1,5 +1,6 @@
 package com.kechen.seckill.web;
 
+import com.alibaba.fastjson.JSON;
 import com.kechen.seckill.db.dao.OrderDao;
 import com.kechen.seckill.db.dao.SeckillActivityDao;
 import com.kechen.seckill.db.dao.SeckillCommodityDao;
@@ -8,6 +9,7 @@ import com.kechen.seckill.db.po.SeckillActivity;
 import com.kechen.seckill.db.po.SeckillCommodity;
 import com.kechen.seckill.services.RedisService;
 import com.kechen.seckill.services.SeckillActivityService;
+import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +22,7 @@ import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -55,11 +58,11 @@ public class SeckillActivityController {
     }
 
     /**
-     * 秒杀商品详情
+     * 秒杀商品详情 details of seckill commodity
      * @param resultMap
      * @param seckillActivityId
      * @return
-     */
+
     @RequestMapping("/item/{seckillActivityId}")
     public String itemPage(Map<String,Object> resultMap,@PathVariable long seckillActivityId){
         SeckillActivity seckillActivity = seckillActivityDao.querySeckillActivityById(seckillActivityId);
@@ -74,6 +77,44 @@ public class SeckillActivityController {
         resultMap.put("commodityDesc",seckillCommodity.getCommodityDesc());
         return "seckill_item";
     }
+     */
+    /**
+     * 秒杀商品详情
+     * @param resultMap
+     * @param seckillActivityId
+     * @return
+     */
+
+    @RequestMapping("/item/{seckillActivityId}")
+    public String itemPage(Map<String, Object> resultMap, @PathVariable long seckillActivityId) {
+        SeckillActivity seckillActivity;
+        SeckillCommodity seckillCommodity;
+
+        String seckillActivityInfo = redisService.getValue("seckillActivity:" + seckillActivityId);
+        if (StringUtils.isNotEmpty(seckillActivityInfo)) {
+            log.info("redis cache data:" + seckillActivityInfo);
+            seckillActivity = JSON.parseObject(seckillActivityInfo, SeckillActivity.class);
+        } else {
+            seckillActivity = seckillActivityDao.querySeckillActivityById(seckillActivityId);
+        }
+
+        String seckillCommodityInfo = redisService.getValue("seckillCommodity:" + seckillActivity.getCommodityId());
+        if (StringUtils.isNotEmpty(seckillCommodityInfo)) {
+            log.info("redis cache data:" + seckillCommodityInfo);
+            seckillCommodity = JSON.parseObject(seckillActivityInfo, SeckillCommodity.class);
+        } else {
+            seckillCommodity = seckillCommodityDao.querySeckillCommodityById(seckillActivity.getCommodityId());
+        }
+
+        resultMap.put("seckillActivity", seckillActivity);
+        resultMap.put("seckillCommodity", seckillCommodity);
+        resultMap.put("seckillPrice", seckillActivity.getSeckillPrice());
+        resultMap.put("oldPrice", seckillActivity.getOldPrice());
+        resultMap.put("commodityId", seckillActivity.getCommodityId());
+        resultMap.put("commodityName", seckillCommodity.getCommodityName());
+        resultMap.put("commodityDesc", seckillCommodity.getCommodityDesc());
+        return "seckill_item";
+    }
 
     //    @ResponseBody
     @RequestMapping("/addSeckillActivityAction")
@@ -86,7 +127,7 @@ public class SeckillActivityController {
             @RequestParam("startTime") String startTime,
             @RequestParam("endTime") String endTime,
             Map<String, Object> resultMap
-    ) throws ParseException {
+    ) throws ParseException, ParseException {
         startTime = startTime.substring(0, 10) +  startTime.substring(11);
         endTime = endTime.substring(0, 10) +  endTime.substring(11);
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-ddhh:mm");
@@ -191,5 +232,17 @@ public class SeckillActivityController {
     public String payOrder(@PathVariable String orderNo) throws Exception {
         seckillActivityService.payOrderProcess(orderNo);
         return "redirect:/seckill/orderQuery/" + orderNo;
+    }
+
+    /**
+     * 获取当前服务器端的时间
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping("/seckill/getSystemTime")
+    public String getSystemTime() {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//set date format
+        String date = df.format(new Date());// new Date():get the current system time
+        return date;
     }
 }
