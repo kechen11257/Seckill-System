@@ -1,5 +1,8 @@
 package com.kechen.seckill.web;
 
+import com.alibaba.csp.sentinel.Entry;
+import com.alibaba.csp.sentinel.SphU;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.fastjson.JSON;
 import com.kechen.seckill.db.dao.OrderDao;
 import com.kechen.seckill.db.dao.SeckillActivityDao;
@@ -244,5 +247,17 @@ public class SeckillActivityController {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//set date format
         String date = df.format(new Date());// new Date():get the current system time
         return date;
+    }
+
+    @RequestMapping("/seckills")
+    public String activityList(Map<String, Object> resultMap) {
+        try (Entry entry = SphU.entry("seckills")) {
+            List<SeckillActivity> seckillActivities = seckillActivityDao.querySeckillActivitysByStatus(1);
+            resultMap.put("seckillActivities", seckillActivities);
+            return "seckill_activity";
+        } catch (BlockException ex) {
+            log.error("Query the list of seckill activities is restricted "+ex.toString());
+            return "wait";
+        }
     }
 }
