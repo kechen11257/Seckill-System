@@ -188,7 +188,7 @@ public class SeckillActivityController {
      * @return
      */
     @RequestMapping("/seckill/payOrder/{orderNo}")
-    public String payOrder(@PathVariable String orderNo){
+    public String payOrder(@PathVariable String orderNo) throws Exception {
         seckillActivityService.payOrderProcess(orderNo);
         return "redirect:/seckill/orderQuery/" + orderNo;
     }

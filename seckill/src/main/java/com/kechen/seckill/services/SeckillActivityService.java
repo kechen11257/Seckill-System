@@ -81,22 +81,56 @@ public class SeckillActivityService {
 
         return order;
     }
-
     /**
      * 订单支付完成处理
      * @param orderNo
-     */
+
     public void payOrderProcess(String orderNo) {
         log.info("完成支付订单 订单号：" + orderNo);
         Order order = orderDao.queryOrder(orderNo);
         boolean deductStockResult = seckillActivityDao.deductStock(order.getSeckillActivityId());
         if (deductStockResult) {
             order.setPayTime(new Date());
-            // Order Status 0. No stock available, invalid order 1. Created and awaiting payment 2. Payment completed
             // 订单状态 0、没有可用库存，无效订单  1、已创建等待支付  2、完成支付
             order.setOrderStatus(2);
             orderDao.updateOrder(order);
         }
+    }
+     */
+
+    /**
+     * 订单支付完成处理
+     *
+     * @param orderNo
+     */
+    public void payOrderProcess(String orderNo) throws Exception {
+        log.info("Complete the payment order, order number：" + orderNo);
+        Order order = orderDao.queryOrder(orderNo);
+
+        /*
+         * 1.Determine whether the order exists 判断订单是否存在
+         * 2.Determine whether the order status is unpaid 判断订单状态是否为未支付状态
+         */
+        if (order == null) {
+            log.error("The order corresponding to the order number does not exist：" + orderNo);
+            return;
+        } else if(order.getOrderStatus() != 1 ) {
+            log.error("Invalid order status:" + orderNo);
+            return;
+        }
+
+        /*
+         * 2.Order payment completed 订单支付完成
+         */
+        order.setPayTime(new Date());
+        // Order status 0: No stock available, invalid order 1: Created and waiting for payment, 2: Payment completed
+        // 订单状态 0:没有可用库存，无效订单 1:已创建等待付款 ,2:支付完成
+        order.setOrderStatus(2);
+        orderDao.updateOrder(order);
+        /*
+         *3.Send order payment success message 发送订单付款成功消息
+         */
+        rocketMQService.sendMessage("pay_done", JSON.toJSONString(order));
     }
 }
 
